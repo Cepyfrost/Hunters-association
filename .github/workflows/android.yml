@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get project
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java
@@ -25,16 +25,20 @@ jobs:
 
       - name: Install Android SDK
         run: |
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-35"
+          sdkmanager "build-tools;35.0.0"
 
       - name: Create Android project
         run: |
           mkdir -p app/src/main/java/com/huntersassociation/app
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/drawable
 
           cp MainActivity.java app/src/main/java/com/huntersassociation/app/MainActivity.java
           cp hunters_association_prototype.html app/src/main/assets/hunters_association_prototype.html
+          cp ic_launcher_master.png app/src/main/res/drawable/ic_launcher_master.png
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -76,8 +80,8 @@ jobs:
                   applicationId 'com.huntersassociation.app'
                   minSdk 23
                   targetSdk 35
-                  versionCode 1
-                  versionName '1.0'
+                  versionCode 2
+                  versionName '1.1'
               }
           }
           EOF
@@ -101,6 +105,7 @@ jobs:
               <application
                   android:allowBackup="true"
                   android:label="Hunter's Association"
+                  android:icon="@drawable/ic_launcher_master"
                   android:theme="@style/AppTheme">
 
                   <activity
@@ -113,6 +118,7 @@ jobs:
                       </intent-filter>
 
                   </activity>
+
               </application>
 
           </manifest>
@@ -129,5 +135,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Hunters-Association-APK
+          name: Hunters-Association-v1.1
           path: app/build/outputs/apk/debug/app-debug.apk
