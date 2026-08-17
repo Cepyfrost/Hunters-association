@@ -37,7 +37,6 @@ jobs:
           mkdir -p app/src/main/res/drawable
 
           cp MainActivity.java app/src/main/java/com/huntersassociation/app/MainActivity.java
-          cp hunters_association_prototype.html app/src/main/assets/hunters_association_prototype.html
           cp ic_launcher_master.png app/src/main/res/drawable/ic_launcher_master.png
 
           cat > settings.gradle <<'EOF'
@@ -77,11 +76,11 @@ jobs:
               compileSdk 35
 
               defaultConfig {
-                  applicationId 'com.huntersassociation.v11'
+                  applicationId 'com.huntersassociation.v12'
                   minSdk 23
                   targetSdk 35
-                  versionCode 2
-                  versionName '1.1 Test'
+                  versionCode 3
+                  versionName '1.2 Test'
               }
           }
           EOF
@@ -92,6 +91,9 @@ jobs:
                   <item name="android:fontFamily">sans</item>
                   <item name="android:windowActionModeOverlay">true</item>
                   <item name="android:colorAccent">#00AEEF</item>
+                  <item name="android:navigationBarColor">#050A12</item>
+                  <item name="android:statusBarColor">#07111F</item>
+                  <item name="android:windowLightStatusBar">false</item>
               </style>
           </resources>
           EOF
@@ -109,31 +111,4 @@ jobs:
                   android:theme="@style/AppTheme">
 
                   <activity
-                      android:name=".MainActivity"
-                      android:exported="true">
-
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-
-                  </activity>
-
-              </application>
-
-          </manifest>
-          EOF
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.10.2'
-
-      - name: Build APK
-        run: gradle assembleDebug --no-daemon
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Hunters-Association-v1.1-Test
-          path: app/build/outputs/apk/debug/app-debug.apk
+                      android:name=".Main
