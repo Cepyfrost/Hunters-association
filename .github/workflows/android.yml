@@ -1,4 +1,4 @@
-name: Build Hunter's Association APK
+name: Build & Sign Hunter's Association APK
 
 on:
   workflow_dispatch:
@@ -6,40 +6,182 @@ on:
     branches:
       - main
 
+env:
+  BUILD_TOOLS: "35.0.0"
+  API_LEVEL: 35
+  PACKAGE_NAME: "com.huntersassociation.app"
+  APP_VERSION_CODE: 2
+  APP_VERSION_NAME: "1.2"
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          api-level: ${{ env.API_LEVEL }}
+          build-tools: ${{ env.BUILD_TOOLS }}
+          components: platform-tools
 
-      - name: Install Android SDK
+      - name: Verify HTML
         run: |
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-35"
-          sdkmanager "build-tools;35.0.0"
+          if [ ! -f "hunters_association_prototype.html" ]; then
+            echo "hunters_association_prototype.html was not found."
+            exit 1
+          fi
 
       - name: Create Android project
         run: |
           mkdir -p app/src/main/java/com/huntersassociation/app
           mkdir -p app/src/main/assets
-          mkdir -p app/src/main/res/values
-          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/mipmap-hdpi
+          mkdir -p app/src/main/res/mipmap-mdpi
+          mkdir -p app/src/main/res/mipmap-xhdpi
+          mkdir -p app/src/main/res/mipmap-xxhdpi
+          mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-          cp MainActivity.java app/src/main/java/com/huntersassociation/app/MainActivity.java
-          cp hunters_association_prototype.html app/src/main/assets/hunters_association_prototype.html
-          cp ic_launcher_master.png app/src/main/res/drawable/ic_launcher_master.png
+          cp hunters_association_prototype.html \
+            app/src/main/assets/hunters_association_prototype.html
 
+      - name: Create MainActivity
+        run: |
+          cat > app/src/main/java/com/huntersassociation/app/MainActivity.java <<'EOF'
+          package com.huntersassociation.app;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          public class MainActivity extends Activity {
+
+              private WebView web;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  web = new WebView(this);
+                  setContentView(web);
+
+                  WebSettings settings = web.getSettings();
+
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setDatabaseEnabled(true);
+                  settings.setAllowFileAccess(true);
+                  settings.setBuiltInZoomControls(false);
+                  settings.setDisplayZoomControls(false);
+
+                  web.setWebViewClient(new WebViewClient());
+
+                  web.loadUrl(
+                      "file:///android_asset/hunters_association_prototype.html"
+                  );
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (web != null && web.canGoBack()) {
+                      web.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
+              }
+
+              @Override
+              protected void onDestroy() {
+                  if (web != null) {
+                      web.loadUrl("about:blank");
+                      web.stopLoading();
+                      web.setWebViewClient(null);
+                      web.destroy();
+                      web = null;
+                  }
+
+                  super.onDestroy();
+              }
+          }
+          EOF
+
+      - name: Create AndroidManifest
+        run: |
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.INTERNET" />
+
+              <application
+                  android:allowBackup="true"
+                  android:label="Hunter's Association"
+                  android:theme="@android:style/Theme.NoTitleBar"
+                  android:usesCleartextTraffic="true">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:screenOrientation="portrait"
+                      android:exported="true">
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+
+                  </activity>
+
+              </application>
+
+          </manifest>
+          EOF
+
+      - name: Create app build.gradle
+        run: |
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.huntersassociation.app'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId "com.huntersassociation.app"
+                  minSdk 21
+                  targetSdk 35
+                  versionCode 2
+                  versionName "1.2"
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      shrinkResources false
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          EOF
+
+      - name: Create root Gradle files
+        run: |
           cat > settings.gradle <<'EOF'
           pluginManagement {
               repositories {
@@ -58,7 +200,7 @@ jobs:
           }
 
           rootProject.name = "HuntersAssociation"
-          include(":app")
+          include ":app"
           EOF
 
           cat > build.gradle <<'EOF'
@@ -67,161 +209,53 @@ jobs:
           }
           EOF
 
-          cat > app/build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application'
-          }
+      - name: Create Gradle wrapper
+        run: |
+          gradle wrapper --gradle-version 8.7
 
-          android {
-              namespace 'com.huntersassociation.app'
-              compileSdk 35
-
-              defaultConfig {
-                  applicationId 'com.huntersassociation.v11'
-                  minSdk 23
-                  targetSdk 35
-                  versionCode 2
-                  versionName '1.1 Test'
-              }
-          }
-          EOF
-
-          cat > app/src/main/res/values/styles.xml <<'EOF'
-          <resources>
-              <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
-                  <item name="android:fontFamily">sans</item>
-                  <item name="android:windowActionModeOverlay">true</item>
-                  <item name="android:colorAccent">#00AEEF</item>
-              </style>
-          </resources>
-          EOF
-
-          cat > app/src/main/AndroidManifest.xml <<'EOF'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-              <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.VIBRATE" />
-
-              <application
-                  android:allowBackup="true"
-                  android:label="Hunter's Association"
-                  android:icon="@drawable/ic_launcher_master"
-                  android:theme="@style/AppTheme">
-
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true">
-
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-
-                  </activity>
-
-              </application>
-
-          </manifest>
-          EOF
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-name: Build & Sign Hunter's Association APK
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-
-env:
-  BUILD_TOOLS: "33.0.2"
-  API_LEVEL: 33
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            .gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: ${{ env.API_LEVEL }}
-          build-tools: ${{ env.BUILD_TOOLS }}
-          components: platform-tools
-
-      - name: Make Gradle executable
-        run: chmod +x gradlew
-
-      - name: Decode existing release keystore
+      - name: Decode release keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/release-keystore.jks
-
-      - name: Assemble release
-        run: ./gradlew --no-daemon assembleRelease
-
-      - name: Locate release APK
-        id: find-apk
-        run: |
-          apk=$(find app/build/outputs/apk/release -type f -name "*.apk" | head -n 1)
-
-          if [ -z "$apk" ]; then
-            echo "No release APK found."
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "KEYSTORE_BASE64 secret is missing."
             exit 1
           fi
 
-          echo "apk=$apk" >> "$GITHUB_OUTPUT"
+          echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/hunters-release-key.jks
 
-      - name: Sign APK with existing release key
+          if [ ! -s /tmp/hunters-release-key.jks ]; then
+            echo "Keystore could not be created."
+            exit 1
+          fi
+
+      - name: Build signed release APK
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          unsigned="${{ steps.find-apk.outputs.apk }}"
-          out="app/build/outputs/apk/release/hunters-association-v1.1-signed.apk"
+          chmod +x gradlew
 
-          apksigner="$ANDROID_SDK_ROOT/build-tools/${BUILD_TOOLS}/apksigner"
+          ./gradlew --no-daemon clean assembleRelease
 
-          "$apksigner" sign \
-            --ks /tmp/release-keystore.jks \
+          apksigner \
+            sign \
+            --ks /tmp/hunters-release-key.jks \
             --ks-pass pass:"$KEYSTORE_PASSWORD" \
             --ks-key-alias "$KEY_ALIAS" \
             --key-pass pass:"$KEY_PASSWORD" \
-            --out "$out" \
-            "$unsigned"
+            --out app/build/outputs/apk/release/hunters-association-v1.2.apk \
+            app/build/outputs/apk/release/app-release-unsigned.apk
 
-      - name: Verify APK
+      - name: Verify APK signature
         run: |
-          apksigner="$ANDROID_SDK_ROOT/build-tools/${BUILD_TOOLS}/apksigner"
+          apksigner verify --verbose \
+            app/build/outputs/apk/release/hunters-association-v1.2.apk
 
-          "$apksigner" verify \
-            --verbose \
-            "app/build/outputs/apk/release/hunters-association-v1.1-signed.apk"
-
-      - name: Upload V1.1 APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: hunters-association-v1.1
-          path: app/build/outputs/apk/release/hunters-association-v1.1-signed.apk
+          name: hunters-association-v1.2-signed
+          path: app/build/outputs/apk/release/hunters-association-v1.2.apk
+          if-no-files-found: error
