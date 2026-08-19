@@ -29,21 +29,43 @@ jobs:
 
       - name: Verify HTML
         run: |
-          test -f hunters_association_prototype.html
+          find . -type f \( -name "*.html" -o -name "*.htm" \) -print
+
+      - name: Find launcher icon
+        run: |
+          ICON=$(find . -type f \( -iname "ICLauncherMaster.png" -o -iname "ic_launcher_master.png" \) | head -n 1)
+          if [ -z "$ICON" ]; then
+            echo "Launcher icon not found"
+            find . -type f | sort
+            exit 1
+          fi
+          echo "Found launcher icon: $ICON"
+          cp "$ICON" /tmp/ICLauncherMaster.png
 
       - name: Create Android project
         run: |
           mkdir -p app/src/main/java/com/huntersassociation/app
           mkdir -p app/src/main/assets
-          mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/mipmap-hdpi
           mkdir -p app/src/main/res/mipmap-mdpi
           mkdir -p app/src/main/res/mipmap-xhdpi
           mkdir -p app/src/main/res/mipmap-xxhdpi
           mkdir -p app/src/main/res/mipmap-xxxhdpi
+          mkdir -p app/src/main/res/values
 
-          cp hunters_association_prototype.html app/src/main/assets/hunters_association_prototype.html
+          HTML=$(find . -type f \( -name "*.html" -o -name "*.htm" \) | head -n 1)
+
+          if [ -z "$HTML" ]; then
+            echo "HTML file not found"
+            exit 1
+          fi
+
+          cp "$HTML" app/src/main/assets/index.html
+
+      - name: Install launcher icon
+        run: |
+          cp /tmp/ICLauncherMaster.png app/src/main/res/drawable/ic_launcher.png
 
       - name: Create MainActivity
         run: |
@@ -52,18 +74,15 @@ jobs:
 
           import android.app.Activity;
           import android.os.Bundle;
-          import android.os.Vibrator;
-          import android.os.VibrationEffect;
           import android.webkit.WebSettings;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
 
           public class MainActivity extends Activity {
-
               private WebView web;
 
               @Override
-              public void onCreate(Bundle savedInstanceState) {
+              protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
 
                   web = new WebView(this);
@@ -78,7 +97,7 @@ jobs:
                   settings.setDisplayZoomControls(false);
 
                   web.setWebViewClient(new WebViewClient());
-                  web.loadUrl("file:///android_asset/hunters_association_prototype.html");
+                  web.loadUrl("file:///android_asset/index.html");
               }
 
               @Override
@@ -92,22 +111,29 @@ jobs:
           }
           EOF
 
+      - name: Create resources
+        run: |
+          cat > app/src/main/res/values/colors.xml <<'EOF'
+          <resources>
+              <color name="icon_background">#000000</color>
+          </resources>
+          EOF
+
       - name: Create AndroidManifest
         run: |
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <uses-permission android:name="android.permission.VIBRATE"/>
+              <uses-permission android:name="android.permission.VIBRATE" />
 
               <application
                   android:allowBackup="true"
                   android:label="Hunter's Association"
                   android:theme="@style/AppTheme"
+                  android:icon="@drawable/ic_launcher"
+                  android:roundIcon="@drawable/ic_launcher"
                   android:usesCleartextTraffic="true"
-                  android:hardwareAccelerated="true"
-                  android:icon="@mipmap/ic_launcher"
-                  android:roundIcon="@mipmap/ic_launcher">
+                  android:hardwareAccelerated="true">
 
                   <activity
                       android:name=".MainActivity"
@@ -115,8 +141,8 @@ jobs:
                       android:exported="true">
 
                       <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
 
                   </activity>
@@ -126,34 +152,18 @@ jobs:
           </manifest>
           EOF
 
-      - name: Create resources
+      - name: Create styles
         run: |
           cat > app/src/main/res/values/styles.xml <<'EOF'
           <resources>
-              <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
                   <item name="android:fontFamily">sans</item>
+                  <item name="android:windowActionModeOverlay">true</item>
+                  <item name="android:colorAccent">#7000FF</item>
                   <item name="android:windowLightStatusBar">false</item>
-                  <item name="android:statusBarColor">#050B14</item>
-                  <item name="android:navigationBarColor">#050B14</item>
-                  <item name="android:colorAccent">#00AAFF</item>
+                  <item name="android:statusBarColor">#050510</item>
+                  <item name="android:navigationBarColor">#050510</item>
               </style>
-          </resources>
-          EOF
-
-      - name: Install launcher icon
-        run: |
-          if [ -f ICLauncherMaster.png ]; then
-            cp ICLauncherMaster.png app/src/main/res/drawable/ic_launcher.png
-          elif [ -f ic_launcher.png ]; then
-            cp ic_launcher.png app/src/main/res/drawable/ic_launcher.png
-          else
-            echo "Launcher icon not found"
-            exit 1
-          fi
-
-          cat > app/src/main/res/values/colors.xml <<'EOF'
-          <resources>
-              <color name="launcher_background">#05000D</color>
           </resources>
           EOF
 
@@ -202,62 +212,19 @@ jobs:
                   minSdk 23
                   targetSdk 35
                   versionCode 2
-                  versionName '1.2'
-              }
-
-              signingConfigs {
-                  release {
-                      storeFile file("${rootProject.projectDir}/hunters-release-key.jks")
-                      storePassword System.getenv("KEYSTORE_PASSWORD")
-                      keyAlias System.getenv("KEY_ALIAS")
-                      keyPassword System.getenv("KEY_PASSWORD")
-                  }
-              }
-
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.release
-                      minifyEnabled false
-                  }
+                  versionName '1.1'
               }
           }
           EOF
 
       - name: Create Gradle wrapper
-        run: |
-          gradle wrapper --gradle-version 8.10.2
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Decode release keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "KEYSTORE_BASE64 secret is missing."
-            exit 1
-          fi
-
-          printf '%s' "$KEYSTORE_BASE64" \
-            | tr -d '[:space:]' \
-            | base64 --decode > hunters-release-key.jks
-
-          test -s hunters-release-key.jks
-
-      - name: Build signed release APK
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          ./gradlew assembleRelease --no-daemon
-
-      - name: Verify APK signature
-        run: |
-          $ANDROID_HOME/build-tools/35.0.0/apksigner verify \
-            --verbose \
-            app/build/outputs/apk/release/app-release.apk
+      - name: Build APK
+        run: gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Hunters-Association-V1.2
-          path: app/build/outputs/apk/release/app-release.apk
+          name: Hunters-Association-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
