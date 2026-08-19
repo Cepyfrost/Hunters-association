@@ -1,64 +1,855 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111f">
+<title>Hunter's Association</title>
 
-    <title>Hunter's Association Test</title>
-
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background: #03050f;
-            color: white;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-
-        .box {
-            padding: 30px;
-        }
-
-        h1 {
-            font-size: 28px;
-            margin-bottom: 15px;
-        }
-
-        p {
-            font-size: 18px;
-            color: #00aeef;
-        }
-
-        .status {
-            margin-top: 25px;
-            padding: 12px 20px;
-            border: 1px solid #00aeef;
-            border-radius: 8px;
-            display: inline-block;
-        }
-    </style>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#050a12;color:#eef6ff}
+body{overflow-x:hidden}
+.app{min-height:100vh;max-width:520px;margin:auto;background:radial-gradient(circle at 50% 0%,#12345a 0,#081524 35%,#050a12 75%);position:relative;padding-bottom:84px}
+header{padding:18px 18px 8px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;background:rgba(5,10,18,.72);backdrop-filter:blur(16px)}
+.brand{font-weight:800;letter-spacing:1.5px}
+.sub{font-size:10px;color:#80bfff;letter-spacing:2px;margin-top:3px}
+.iconbtn{border:1px solid #24415e;background:#0b1929;color:#cce8ff;border-radius:12px;width:40px;height:40px;font-size:18px}
+.screen{display:none;padding:10px 16px 24px;animation:fade .25s ease}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.hero{min-height:250px;border:1px solid #1c4467;border-radius:24px;overflow:hidden;position:relative;background:linear-gradient(145deg,rgba(13,45,76,.85),rgba(4,13,24,.92));box-shadow:0 0 35px rgba(0,130,255,.12)}
+.hero:before{content:"";position:absolute;inset:-40%;background:conic-gradient(from 180deg,transparent,#148cff22,transparent,#42b5ff18,transparent);animation:spin 9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.character{height:210px;display:flex;align-items:flex-end;justify-content:center;position:relative}
+.orb{position:absolute;top:28px;width:105px;height:105px;border-radius:50%;background:#138cff18;box-shadow:0 0 55px #168fff88;animation:breathe 3s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.08);opacity:.7}}
+.hunter{width:94px;height:170px;position:relative;animation:bob 3s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-4px)}}
+.head{width:43px;height:48px;border-radius:50%;background:linear-gradient(145deg,#e7b08a,#8e4e3b);margin:auto;position:relative;z-index:2}
+.bodyshape{width:76px;height:100px;margin:-3px auto 0;background:linear-gradient(145deg,#193d62,#081827);clip-path:polygon(20% 0,80% 0,100% 100%,0 100%);border:1px solid #48aaff}
+.leg{position:absolute;bottom:0;width:22px;height:63px;background:#0a1725;border:1px solid #2671a8}
+.l{left:20px}.r{right:20px}
+.heroInfo{position:absolute;left:18px;right:18px;bottom:15px;display:flex;justify-content:space-between;align-items:end}
+.rank{font-size:42px;font-weight:900;color:#62c0ff;text-shadow:0 0 18px #168fff}
+.muted{color:#7895ad;font-size:12px}
+.card{background:linear-gradient(145deg,#0b1a2b,#08121e);border:1px solid #1a3b58;border-radius:18px;padding:16px;margin-top:13px;box-shadow:0 8px 25px #0003}
+.row{display:flex;justify-content:space-between;gap:10px}
+.title{font-weight:800;letter-spacing:.4px}
+.xpbar,.statbar{height:8px;background:#102235;border-radius:99px;overflow:hidden;margin-top:9px}
+.fill{height:100%;width:43%;background:linear-gradient(90deg,#138cff,#70d8ff);box-shadow:0 0 14px #138cff;transition:width .6s}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{padding:12px;border-radius:14px;background:#081827;border:1px solid #173550}
+.stat b{font-size:22px}
+.btn{border:0;border-radius:13px;padding:13px 15px;background:linear-gradient(90deg,#087ff0,#18a7ff);color:white;font-weight:800;width:100%;margin-top:10px;box-shadow:0 7px 20px #008cff25}
+.btn.alt{background:#0c1d2e;border:1px solid #235172}
+.pill{display:inline-block;padding:5px 9px;border-radius:99px;background:#102c45;color:#80c9ff;font-size:11px}
+.question{font-size:19px;line-height:1.4;margin:20px 0}
+.answer{text-align:left;background:#0a1928;border:1px solid #214762;color:#dcefff;border-radius:13px;padding:14px;margin:8px 0;width:100%}
+.answer.selected{border-color:#28a9ff;background:#103552;box-shadow:0 0 18px #078dff22}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);height:74px;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(4,11,19,.9);backdrop-filter:blur(18px);border-top:1px solid #1a3850;z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+.nav button{background:none;border:0;color:#63819a;font-size:10px}
+.nav button span{display:block;font-size:21px;margin-bottom:3px}
+.nav button.active{color:#59bfff;text-shadow:0 0 14px #008cff}
+.list{display:grid;gap:10px}
+.gate{padding:15px;border:1px solid #1a3d59;border-radius:17px;background:#091827}
+.gate h3{margin:5px 0}
+.gate small{color:#7895ad}
+.tag{float:right;color:#65c7ff;font-size:11px}
+.toast{position:fixed;left:50%;bottom:92px;transform:translate(-50%,20px);background:#0b2235;border:1px solid #2b8dca;border-radius:13px;padding:11px 16px;opacity:0;pointer-events:none;transition:.3s;z-index:50;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:40}
+.modal.show{display:flex}
+.sheet{width:min(520px,100%);background:#091624;border:1px solid #1e4563;border-radius:24px 24px 0 0;padding:22px;max-height:85vh;overflow:auto}
+.danger{color:#ff9b9b}
+.center{text-align:center}
+.small{font-size:12px;color:#7895ad}
+</style>
 </head>
 
 <body>
 
-    <div class="box">
-        <h1>HUNTER'S ASSOCIATION</h1>
+<div class="app">
 
-        <p>WebView Test</p>
+<header>
+<div>
+<div class="brand">HUNTER'S ASSOCIATION</div>
+<div class="sub">AWAKEN • GROW • BECOME MORE</div>
+</div>
+<button class="iconbtn" onclick="openSettings()">⚙</button>
+</header>
 
-        <div class="status">
-            APK IS WORKING
-        </div>
-    </div>
+<section id="home" class="screen active">
+
+<div class="hero">
+<div class="character">
+<div class="orb"></div>
+<div class="hunter">
+<div class="head"></div>
+<div class="bodyshape"></div>
+<div class="leg l"></div>
+<div class="leg r"></div>
+</div>
+</div>
+
+<div class="heroInfo">
+<div>
+<div class="muted">HUNTER</div>
+<b id="homeName">ALEX</b>
+</div>
+
+<div class="center">
+<div class="muted">RANK</div>
+<div class="rank" id="homeRank">E</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="row">
+<div>
+<div class="muted">EXPERIENCE</div>
+<b id="xpText">0 / 1000 XP</b>
+</div>
+<span class="pill" id="streak">🔥 0 DAY</span>
+</div>
+<div class="xpbar">
+<div class="fill" id="xpFill"></div>
+</div>
+</div>
+
+<div class="grid">
+<button class="card" onclick="startAssessment()">⚡<br><b>AWAKEN</b><br><span class="small">Assess your abilities</span></button>
+<button class="card" onclick="show('training')">🎯<br><b>TRAIN</b><br><span class="small">Today's challenges</span></button>
+</div>
+
+<div class="card">
+<div class="row">
+<b>DAILY OBJECTIVE</b>
+<span class="pill" id="dailyStatus">+50 XP</span>
+</div>
+<p class="small">Complete today's training challenge and keep your Hunter streak alive.</p>
+<button class="btn" onclick="completeDaily()">COMPLETE DAILY • +50 XP</button>
+</div>
+
+</section>
+
+<section id="hunter" class="screen">
+
+<h2>Hunter Profile</h2>
+
+<div class="card center">
+<div class="muted">CURRENT RANK</div>
+<div class="rank" id="profileRank">E</div>
+<div id="profileName">ALEX</div>
+</div>
+
+<div class="card">
+<div class="row">
+<b>ABILITY PROFILE</b>
+<span class="small">Current assessment</span>
+</div>
+<div id="stats"></div>
+</div>
+
+<div class="card">
+<b>Achievements</b>
+<div id="achievements" class="list" style="margin-top:10px"></div>
+</div>
+
+</section>
+
+<section id="gates" class="screen">
+<h2>Gates</h2>
+<p class="small">Tasks and challenges available to Hunters.</p>
+<div id="gatesList" class="list"></div>
+</section>
+
+<section id="guild" class="screen">
+
+<h2>Guild</h2>
+
+<div class="card center">
+<div style="font-size:50px">⚔️</div>
+<h2>Nightfall Guild</h2>
+<span class="pill">S-RANK GUILD</span>
+<p class="small">34 Hunters • 12 active Gates</p>
+<button class="btn" onclick="toast('Guild creation is planned for a future version.')">CREATE GUILD</button>
+</div>
+
+<div class="card">
+<b>Announcements</b>
+<p class="small">Welcome, Hunters. Train consistently and help your squad.</p>
+</div>
+
+</section>
+
+<section id="more" class="screen">
+
+<h2>More</h2>
+
+<div class="list">
+
+<button class="card" onclick="show('training')">
+🎯 <b>Hunter Training</b><br>
+<span class="small">Daily physical, mental and creative challenges</span>
+</button>
+
+<button class="card" onclick="startAssessment()">
+🧠 <b>Hunter Reassessment</b><br>
+<span class="small">Test your current abilities</span>
+</button>
+
+<button class="card" onclick="openSettings()">
+⚙️ <b>Settings</b><br>
+<span class="small">Account and app preferences</span>
+</button>
+
+<button class="card" onclick="toast('Safety Center coming in Prototype B.')">
+🛡️ <b>Safety Center</b><br>
+<span class="small">Guidelines for real-world Gates</span>
+</button>
+
+</div>
+</section>
+
+<section id="training" class="screen">
+
+<h2>Hunter Training</h2>
+<p class="small">Complete challenges to earn XP.</p>
+
+<div id="trainingList" class="list"></div>
+
+<button class="btn alt" onclick="show('home')">← BACK TO HOME</button>
+
+</section>
+
+<section id="assessment" class="screen">
+
+<div class="row">
+<span class="pill" id="qCount">QUESTION 1/10</span>
+<span class="small" id="qCategory">MENTAL</span>
+</div>
+
+<div class="xpbar">
+<div class="fill" id="qFill" style="width:10%"></div>
+</div>
+
+<div class="card">
+<div class="question" id="question"></div>
+<div id="answers"></div>
+</div>
+
+</section>
+
+<nav class="nav">
+
+<button data-s="home" class="active" onclick="show('home')">
+<span>⌂</span>HOME
+</button>
+
+<button data-s="hunter" onclick="show('hunter')">
+<span>◉</span>HUNTER
+</button>
+
+<button data-s="gates" onclick="show('gates')">
+<span>◇</span>GATES
+</button>
+
+<button data-s="guild" onclick="show('guild')">
+<span>⚔</span>GUILD
+</button>
+
+<button data-s="more" onclick="show('more')">
+<span>☰</span>MORE
+</button>
+
+</nav>
+
+<div id="toast" class="toast"></div>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+<div class="sheet" id="sheet"></div>
+</div>
+
+</div>
+
+<script>
+
+const KEY='ha_prototype_a';
+
+const defaultState={
+name:'Alex',
+rank:'E',
+xp:0,
+stats:{
+Mental:0,
+Physical:0,
+Creativity:0,
+Discipline:0,
+Leadership:0
+},
+achievements:[],
+gates:[],
+training:[],
+streak:0,
+lastDay:'',
+daily:false
+};
+
+let state;
+
+try{
+const saved=localStorage.getItem(KEY);
+
+if(saved){
+state=JSON.parse(saved);
+}else{
+state=JSON.parse(JSON.stringify(defaultState));
+}
+
+}catch(e){
+
+console.log('Storage unavailable:',e);
+
+state=JSON.parse(JSON.stringify(defaultState));
+
+}
+
+function save(){
+
+try{
+localStorage.setItem(KEY,JSON.stringify(state));
+}catch(e){
+console.log('Could not save data:',e);
+}
+
+render();
+
+}
+
+function toast(t){
+
+const e=document.getElementById('toast');
+
+e.textContent=t;
+e.classList.add('show');
+
+setTimeout(
+()=>e.classList.remove('show'),
+1800
+);
+
+}
+
+function show(id){
+
+document.querySelectorAll('.screen')
+.forEach(x=>x.classList.remove('active'));
+
+const target=document.getElementById(id);
+
+if(target){
+target.classList.add('active');
+}
+
+document.querySelectorAll('.nav button')
+.forEach(b=>b.classList.toggle('active',b.dataset.s===id));
+
+render();
+
+}
+
+function addXP(n){
+
+state.xp=Math.min(1000,state.xp+n);
+
+toast('+'+n+' XP');
+
+save();
+
+}
+
+function today(){
+
+return new Date().toISOString().slice(0,10);
+
+}
+
+function completeDaily(){
+
+if(state.daily&&state.lastDay===today()){
+
+toast('Daily objective already completed.');
+
+return;
+
+}
+
+state.daily=true;
+state.lastDay=today();
+state.streak++;
+
+addXP(50);
+
+}
+
+const questions=[
+
+['Mental',
+'If nobody would know whether you completed an important task, would you still complete it?',
+['Definitely not','Probably not','Depends','Probably yes','Absolutely']],
+
+['Problem Solving',
+'You need money urgently. What is your first response?',
+['Give up','Wait','Find temporary work','Ask for help','Create several possible solutions']],
+
+['Discipline',
+'You fail at a goal after six months. What do you do?',
+['Quit','Ignore it','Try again','Change the plan','Study the failure and try again']],
+
+['Physical',
+'How many push-ups can you comfortably perform?',
+['0–5','6–15','16–30','31–50','50+']],
+
+['Physical',
+'How often do you exercise?',
+['Never','Rarely','Weekly','Several times weekly','Daily']],
+
+['Creativity',
+'You receive a pencil. What do you see first?',
+['A pencil','A writing tool','A tool for several things','Many possible uses','Almost unlimited possibilities']],
+
+['Creativity',
+'When instructions do not solve the problem, what do you do?',
+['Stop','Follow them exactly','Adapt them','Create my own method','Explore many possible methods']],
+
+['Leadership',
+'Your team starts arguing. What do you do?',
+['Leave','Watch','Support one side','Try to solve it','Unite the team and solve the issue']],
+
+['Leadership',
+'Someone weaker than you asks for help. What do you do?',
+['Ignore them','Maybe help','Give quick advice','Help them','Teach them so they can improve']],
+
+['Discipline',
+'How long can you comfortably work on a difficult task?',
+['Under 20 min','20–40 min','40–60 min','1–2 hours','2+ hours']]
+
+];
+
+let qi=0;
+let answers=[];
+
+function startAssessment(){
+
+qi=0;
+answers=[];
+
+show('assessment');
+
+renderQuestion();
+
+}
+
+function renderQuestion(){
+
+const q=questions[qi];
+
+document.getElementById('qCount').textContent=
+`QUESTION ${qi+1}/${questions.length}`;
+
+document.getElementById('qCategory').textContent=
+q[0].toUpperCase();
+
+document.getElementById('qFill').style.width=
+((qi+1)/questions.length*100)+'%';
+
+document.getElementById('question').textContent=q[1];
+
+document.getElementById('answers').innerHTML=
+q[2].map((a,i)=>
+`<button class="answer" onclick="answer(${i})">${String.fromCharCode(65+i)}. ${a}</button>`
+).join('');
+
+}
+
+function answer(v){
+
+answers[qi]=v+1;
+
+if(qi<questions.length-1){
+
+qi++;
+
+renderQuestion();
+
+}else{
+
+finishAssessment();
+
+}
+
+}
+
+function finishAssessment(){
+
+let sums={};
+let counts={};
+
+questions.forEach((q,i)=>{
+
+sums[q[0]]=
+(sums[q[0]]||0)+(answers[i]||3)*20;
+
+counts[q[0]]=
+(counts[q[0]]||0)+1;
+
+});
+
+let stats={
+
+Mental:Math.round((sums.Mental||0)/(counts.Mental||1)),
+
+Physical:Math.round((sums.Physical||0)/(counts.Physical||1)),
+
+Creativity:Math.round((sums.Creativity||0)/(counts.Creativity||1)),
+
+Discipline:Math.round((sums.Discipline||0)/(counts.Discipline||1)),
+
+Leadership:Math.round((sums.Leadership||0)/(counts.Leadership||1))
+
+};
+
+state.stats=stats;
+
+let overall=Math.round(
+Object.values(stats).reduce((a,b)=>a+b,0)/5
+);
+
+let rank=
+overall>=90?'S':
+overall>=80?'A':
+overall>=65?'B':
+overall>=50?'C':
+overall>=40?'D':'E';
+
+let old=state.rank;
+
+state.rank=rank;
+
+state.xp=Math.max(state.xp,100);
+
+if(!state.achievements.includes('FIRST AWAKENING')){
+
+state.achievements.push('FIRST AWAKENING');
+
+}
+
+save();
+
+openResult(old,rank,overall);
+
+}
+
+function openResult(old,rank,overall){
+
+document.getElementById('sheet').innerHTML=
+
+`<div class="center">
+
+<div class="muted">AWAKENING COMPLETE</div>
+
+<h1 style="font-size:22px">CALCULATION FINISHED</h1>
+
+<div class="rank">${rank}</div>
+
+<p>Your current demonstrated performance has been assessed.</p>
+
+<div class="grid">
+
+${Object.entries(state.stats).map(([k,v])=>
+`<div class="stat">
+<div class="small">${k}</div>
+<b>${v}</b>
+</div>`
+).join('')}
+
+</div>
+
+<button class="btn" onclick="closeModal();show('home')">
+ENTER DASHBOARD
+</button>
+
+</div>`;
+
+document.getElementById('modal')
+.classList.add('show');
+
+}
+
+function closeModal(){
+
+document.getElementById('modal')
+.classList.remove('show');
+
+}
+
+const gateData=[
+
+['HOUSE CLEANING','C','₦5,000',80,'2 hours'],
+
+['MATH TUTORING','B','₦8,000',100,'1 hour'],
+
+['GARDEN ASSISTANCE','C','₦4,000',60,'2 hours'],
+
+['CREATIVE TASK','D','₦2,000',40,'1 hour']
+
+];
+
+function renderGates(){
+
+document.getElementById('gatesList').innerHTML=
+
+gateData.map((g,i)=>{
+
+let done=state.gates.includes(i);
+
+return `<div class="gate">
+
+<span class="tag">${done?'VERIFIED':'OPEN'}</span>
+
+<div class="small">
+GATE #0${42+i} • DIFFICULTY ${g[1]}
+</div>
+
+<h3>${g[0]}</h3>
+
+<small>
+Reward: ${g[2]} • +${g[3]} XP • ${g[4]}
+</small>
+
+<button class="btn ${done?'alt':''}" onclick="acceptGate(${i})">
+${done?'COMPLETED':'VIEW / ACCEPT'}
+</button>
+
+</div>`;
+
+}).join('');
+
+}
+
+function acceptGate(i){
+
+if(state.gates.includes(i)){
+
+toast('Gate already completed.');
+
+return;
+
+}
+
+state.gates.push(i);
+
+if(!state.achievements.includes('FIRST GATE')){
+
+state.achievements.push('FIRST GATE');
+
+}
+
+addXP(gateData[i][3]);
+
+}
+
+const train=[
+
+['Logic Trial','Solve a daily reasoning challenge',30],
+
+['Fitness Trial','Complete your chosen exercise',30],
+
+['Creative Trial','Write three new ideas',25],
+
+['Focus Trial','Work without distraction for 20 minutes',25]
+
+];
+
+function renderTraining(){
+
+document.getElementById('trainingList').innerHTML=
+
+train.map((t,i)=>{
+
+let done=state.training.includes(i);
+
+return `<div class="gate">
+
+<span class="tag">
+${done?'DONE':'+ '+t[2]+' XP'}
+</span>
+
+<h3>${t[0]}</h3>
+
+<small>${t[1]}</small>
+
+<button class="btn ${done?'alt':''}" onclick="completeTraining(${i})">
+${done?'COMPLETED':'COMPLETE CHALLENGE'}
+</button>
+
+</div>`;
+
+}).join('');
+
+}
+
+function completeTraining(i){
+
+if(state.training.includes(i)){
+
+toast('Already completed.');
+
+return;
+
+}
+
+state.training.push(i);
+
+addXP(train[i][2]);
+
+}
+
+function openSettings(){
+
+document.getElementById('sheet').innerHTML=
+
+`<h2>Settings</h2>
+
+<p class="small">
+Prototype A data is saved locally on this device/browser.
+</p>
+
+<button class="btn alt" onclick="renameHunter()">
+Change Hunter Name
+</button>
+
+<button class="btn alt" onclick="resetApp()">
+Reset Prototype Data
+</button>
+
+<button class="btn" onclick="closeModal()">
+Close
+</button>`;
+
+document.getElementById('modal')
+.classList.add('show');
+
+}
+
+function renameHunter(){
+
+let n=prompt(
+'Enter Hunter name:',
+state.name
+);
+
+if(n){
+
+state.name=n.toUpperCase();
+
+save();
+
+closeModal();
+
+toast('Hunter name updated.');
+
+}
+
+}
+
+function resetApp(){
+
+if(confirm('Reset all Hunter progress?')){
+
+try{
+
+localStorage.removeItem(KEY);
+
+}catch(e){
+
+console.log('Could not clear storage:',e);
+
+}
+
+location.reload();
+
+}
+
+}
+
+function render(){
+
+document.getElementById('homeName').textContent=
+state.name;
+
+document.getElementById('profileName').textContent=
+state.name;
+
+document.getElementById('homeRank').textContent=
+state.rank;
+
+document.getElementById('profileRank').textContent=
+state.rank;
+
+document.getElementById('xpText').textContent=
+`${state.xp} / 1000 XP`;
+
+document.getElementById('xpFill').style.width=
+(state.xp/10)+'%';
+
+document.getElementById('streak').textContent=
+'🔥 '+state.streak+' DAY';
+
+document.getElementById('dailyStatus').textContent=
+state.daily&&state.lastDay===today()
+?'DONE'
+:'+50 XP';
+
+document.getElementById('stats').innerHTML=
+
+Object.entries(state.stats).map(([k,v])=>
+
+`<div style="margin:13px 0">
+
+<div class="row">
+<span>${k}</span>
+<b>${v}</b>
+</div>
+
+<div class="statbar">
+<div class="fill" style="width:${v}%"></div>
+</div>
+
+</div>`
+
+).join('');
+
+document.getElementById('achievements').innerHTML=
+
+(state.achievements.length
+?state.achievements
+:['No achievements yet'])
+
+.map(a=>`<div class="gate">🏆 ${a}</div>`)
+.join('');
+
+renderGates();
+
+renderTraining();
+
+}
+
+render();
+
+</script>
 
 </body>
-</html>
+    </html>
