@@ -1,531 +1,64 @@
-<script>
-const KEY='ha_prototype_a';
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-const defaultState={
-    name:'Alex',
-    rank:'E',
-    xp:0,
-    stats:{
-        Mental:0,
-        Physical:0,
-        Creativity:0,
-        Discipline:0,
-        Leadership:0
-    },
-    achievements:[],
-    gates:[],
-    training:[],
-    streak:0,
-    lastDay:'',
-    daily:false
-};
+    <title>Hunter's Association Test</title>
 
-let state;
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #03050f;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
 
-try{
-    const saved=localStorage.getItem(KEY);
-    state=saved?JSON.parse(saved):null;
-}catch(e){
-    state=null;
-}
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
 
-if(!state||typeof state!=='object'){
-    state=JSON.parse(JSON.stringify(defaultState));
-}
+        .box {
+            padding: 30px;
+        }
 
-state.stats=state.stats||JSON.parse(JSON.stringify(defaultState.stats));
-state.achievements=Array.isArray(state.achievements)?state.achievements:[];
-state.gates=Array.isArray(state.gates)?state.gates:[];
-state.training=Array.isArray(state.training)?state.training:[];
-state.xp=Number(state.xp)||0;
-state.streak=Number(state.streak)||0;
-state.rank=state.rank||'E';
-state.name=state.name||'Alex';
+        h1 {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
 
-function save(){
-    try{
-        localStorage.setItem(KEY,JSON.stringify(state));
-    }catch(e){}
-    render();
-}
+        p {
+            font-size: 18px;
+            color: #00aeef;
+        }
 
-function toast(t){
-    const e=document.getElementById('toast');
-    if(!e)return;
-    e.textContent=t;
-    e.classList.add('show');
-    setTimeout(()=>e.classList.remove('show'),1800);
-}
+        .status {
+            margin-top: 25px;
+            padding: 12px 20px;
+            border: 1px solid #00aeef;
+            border-radius: 8px;
+            display: inline-block;
+        }
+    </style>
+</head>
 
-function show(id){
-    const target=document.getElementById(id);
+<body>
 
-    if(!target){
-        toast('Screen unavailable.');
-        return;
-    }
+    <div class="box">
+        <h1>HUNTER'S ASSOCIATION</h1>
 
-    document.querySelectorAll('.screen').forEach(x=>{
-        x.classList.remove('active');
-    });
+        <p>WebView Test</p>
 
-    target.classList.add('active');
-
-    document.querySelectorAll('.nav button').forEach(b=>{
-        b.classList.toggle('active',b.dataset.s===id);
-    });
-
-    render();
-
-    window.scrollTo({
-        top:0,
-        behavior:'smooth'
-    });
-}
-
-function addXP(n){
-    state.xp=Math.min(1000,state.xp+(Number(n)||0));
-    toast('+'+(Number(n)||0)+' XP');
-    save();
-}
-
-function today(){
-    return new Date().toISOString().slice(0,10);
-}
-
-function completeDaily(){
-    if(state.daily&&state.lastDay===today()){
-        toast('Daily objective already completed.');
-        return;
-    }
-
-    state.daily=true;
-    state.lastDay=today();
-    state.streak++;
-    addXP(50);
-}
-
-const questions=[
-    [
-        'Mental',
-        'If nobody would know whether you completed an important task, would you still complete it?',
-        ['Definitely not','Probably not','Depends','Probably yes','Absolutely']
-    ],
-    [
-        'Problem Solving',
-        'You need money urgently. What is your first response?',
-        ['Give up','Wait','Find temporary work','Ask for help','Create several possible solutions']
-    ],
-    [
-        'Discipline',
-        'You fail at a goal after six months. What do you do?',
-        ['Quit','Ignore it','Try again','Change the plan','Study the failure and try again']
-    ],
-    [
-        'Physical',
-        'How many push-ups can you comfortably perform?',
-        ['0–5','6–15','16–30','31–50','50+']
-    ],
-    [
-        'Physical',
-        'How often do you exercise?',
-        ['Never','Rarely','Weekly','Several times weekly','Daily']
-    ],
-    [
-        'Creativity',
-        'You receive a pencil. What do you see first?',
-        ['A pencil','A writing tool','A tool for several things','Many possible uses','Almost unlimited possibilities']
-    ],
-    [
-        'Creativity',
-        'When instructions do not solve the problem, what do you do?',
-        ['Stop','Follow them exactly','Adapt them','Create my own method','Explore many possible methods']
-    ],
-    [
-        'Leadership',
-        'Your team starts arguing. What do you do?',
-        ['Leave','Watch','Support one side','Try to solve it','Unite the team and solve the issue']
-    ],
-    [
-        'Leadership',
-        'Someone weaker than you asks for help. What do you do?',
-        ['Ignore them','Maybe help','Give quick advice','Help them','Teach them so they can improve']
-    ],
-    [
-        'Discipline',
-        'How long can you comfortably work on a difficult task?',
-        ['Under 20 min','20–40 min','40–60 min','1–2 hours','2+ hours']
-    ]
-];
-
-let qi=0;
-let answers=[];
-
-function startAssessment(){
-    qi=0;
-    answers=[];
-    show('assessment');
-    renderQuestion();
-}
-
-function renderQuestion(){
-    const q=questions[qi];
-
-    document.getElementById('qCount').textContent=
-        `QUESTION ${qi+1}/${questions.length}`;
-
-    document.getElementById('qCategory').textContent=
-        q[0].toUpperCase();
-
-    document.getElementById('qFill').style.width=
-        ((qi+1)/questions.length*100)+'%';
-
-    document.getElementById('question').textContent=q[1];
-
-    document.getElementById('answers').innerHTML=
-        q[2].map((a,i)=>
-            `<button class="answer" onclick="answer(${i})">
-                ${String.fromCharCode(65+i)}. ${a}
-            </button>`
-        ).join('');
-}
-
-function answer(v){
-    answers[qi]=v+1;
-
-    if(qi<questions.length-1){
-        qi++;
-        renderQuestion();
-    }else{
-        finishAssessment();
-    }
-}
-
-function finishAssessment(){
-    let sums={};
-    let counts={};
-
-    questions.forEach((q,i)=>{
-        sums[q[0]]=(sums[q[0]]||0)+(answers[i]||3)*20;
-        counts[q[0]]=(counts[q[0]]||0)+1;
-    });
-
-    let stats={
-        Mental:Math.round((sums.Mental||0)/(counts.Mental||1)),
-        Physical:Math.round((sums.Physical||0)/(counts.Physical||1)),
-        Creativity:Math.round((sums.Creativity||0)/(counts.Creativity||1)),
-        Discipline:Math.round((sums.Discipline||0)/(counts.Discipline||1)),
-        Leadership:Math.round((sums.Leadership||0)/(counts.Leadership||1))
-    };
-
-    state.stats=stats;
-
-    let overall=Math.round(
-        Object.values(stats).reduce((a,b)=>a+b,0)/5
-    );
-
-    let rank=
-        overall>=90?'S':
-        overall>=80?'A':
-        overall>=65?'B':
-        overall>=50?'C':
-        overall>=40?'D':
-        'E';
-
-    let old=state.rank;
-
-    state.rank=rank;
-    state.xp=Math.max(state.xp,100);
-
-    if(!state.achievements.includes('FIRST AWAKENING')){
-        state.achievements.push('FIRST AWAKENING');
-    }
-
-    save();
-    openResult(old,rank,overall);
-}
-
-function openResult(old,rank,overall){
-    const sheet=document.getElementById('sheet');
-    const modal=document.getElementById('modal');
-
-    if(!sheet||!modal)return;
-
-    sheet.innerHTML=`
-        <div class="center">
-            <div class="muted">AWAKENING COMPLETE</div>
-
-            <h1 style="font-size:22px">
-                CALCULATION FINISHED
-            </h1>
-
-            <div class="rank">${rank}</div>
-
-            <p>
-                Your current demonstrated performance
-                has been assessed.
-            </p>
-
-            <div class="grid">
-                ${Object.entries(state.stats).map(([k,v])=>`
-                    <div class="stat">
-                        <div class="small">${k}</div>
-                        <b>${v}</b>
-                    </div>
-                `).join('')}
-            </div>
-
-            <button class="btn"
-                onclick="closeModal();show('home')">
-                ENTER DASHBOARD
-            </button>
+        <div class="status">
+            APK IS WORKING
         </div>
-    `;
+    </div>
 
-    modal.classList.add('show');
-}
-
-function closeModal(){
-    const modal=document.getElementById('modal');
-    if(modal){
-        modal.classList.remove('show');
-    }
-}
-
-const gateData=[
-    ['HOUSE CLEANING','C','₦5,000',80,'2 hours'],
-    ['MATH TUTORING','B','₦8,000',100,'1 hour'],
-    ['GARDEN ASSISTANCE','C','₦4,000',60,'2 hours'],
-    ['CREATIVE TASK','D','₦2,000',40,'1 hour']
-];
-
-function renderGates(){
-    const list=document.getElementById('gatesList');
-
-    if(!list)return;
-
-    list.innerHTML=gateData.map((g,i)=>{
-        const done=state.gates.includes(i);
-
-        return `
-            <div class="gate">
-                <span class="tag">
-                    ${done?'VERIFIED':'OPEN'}
-                </span>
-
-                <div class="small">
-                    GATE #0${42+i} • DIFFICULTY ${g[1]}
-                </div>
-
-                <h3>${g[0]}</h3>
-
-                <small>
-                    Reward: ${g[2]} • +${g[3]} XP • ${g[4]}
-                </small>
-
-                <button
-                    class="btn ${done?'alt':''}"
-                    onclick="acceptGate(${i})">
-                    ${done?'COMPLETED':'VIEW / ACCEPT'}
-                </button>
-            </div>
-        `;
-    }).join('');
-}
-
-function acceptGate(i){
-    if(state.gates.includes(i)){
-        toast('Gate already completed.');
-        return;
-    }
-
-    state.gates.push(i);
-
-    if(!state.achievements.includes('FIRST GATE')){
-        state.achievements.push('FIRST GATE');
-    }
-
-    addXP(gateData[i][3]);
-}
-
-const train=[
-    ['Logic Trial','Solve a daily reasoning challenge',30],
-    ['Fitness Trial','Complete your chosen exercise',30],
-    ['Creative Trial','Write three new ideas',25],
-    ['Focus Trial','Work without distraction for 20 minutes',25]
-];
-
-function renderTraining(){
-    const list=document.getElementById('trainingList');
-
-    if(!list)return;
-
-    list.innerHTML=train.map((t,i)=>{
-        const done=state.training.includes(i);
-
-        return `
-            <div class="gate">
-                <span class="tag">
-                    ${done?'DONE':'+ '+t[2]+' XP'}
-                </span>
-
-                <h3>${t[0]}</h3>
-
-                <small>${t[1]}</small>
-
-                <button
-                    class="btn ${done?'alt':''}"
-                    onclick="completeTraining(${i})">
-                    ${done?'COMPLETED':'COMPLETE CHALLENGE'}
-                </button>
-            </div>
-        `;
-    }).join('');
-}
-
-function completeTraining(i){
-    if(state.training.includes(i)){
-        toast('Already completed.');
-        return;
-    }
-
-    state.training.push(i);
-    addXP(train[i][2]);
-}
-
-function openSettings(){
-    const sheet=document.getElementById('sheet');
-    const modal=document.getElementById('modal');
-
-    if(!sheet||!modal)return;
-
-    sheet.innerHTML=`
-        <h2>Settings</h2>
-
-        <p class="small">
-            Prototype A data is saved locally on this device/browser.
-        </p>
-
-        <button
-            class="btn alt"
-            onclick="renameHunter()">
-            Change Hunter Name
-        </button>
-
-        <button
-            class="btn alt"
-            onclick="resetApp()">
-            Reset Prototype Data
-        </button>
-
-        <button
-            class="btn"
-            onclick="closeModal()">
-            Close
-        </button>
-    `;
-
-    modal.classList.add('show');
-}
-
-function renameHunter(){
-    let n=prompt(
-        'Enter Hunter name:',
-        state.name
-    );
-
-    if(n&&n.trim()){
-        state.name=n.trim().toUpperCase();
-        save();
-        closeModal();
-        toast('Hunter name updated.');
-    }
-}
-
-function resetApp(){
-    if(confirm('Reset all Hunter progress?')){
-        localStorage.removeItem(KEY);
-        location.reload();
-    }
-}
-
-function render(){
-    const homeName=document.getElementById('homeName');
-    const profileName=document.getElementById('profileName');
-    const homeRank=document.getElementById('homeRank');
-    const profileRank=document.getElementById('profileRank');
-    const xpText=document.getElementById('xpText');
-    const xpFill=document.getElementById('xpFill');
-    const streak=document.getElementById('streak');
-    const dailyStatus=document.getElementById('dailyStatus');
-    const stats=document.getElementById('stats');
-    const achievements=document.getElementById('achievements');
-
-    if(homeName)homeName.textContent=state.name;
-    if(profileName)profileName.textContent=state.name;
-
-    if(homeRank)homeRank.textContent=state.rank;
-    if(profileRank)profileRank.textContent=state.rank;
-
-    if(xpText){
-        xpText.textContent=
-            `${state.xp} / 1000 XP`;
-    }
-
-    if(xpFill){
-        xpFill.style.width=
-            Math.min(100,state.xp/10)+'%';
-    }
-
-    if(streak){
-        streak.textContent=
-            '🔥 '+state.streak+' DAY';
-    }
-
-    if(dailyStatus){
-        dailyStatus.textContent=
-            state.daily&&state.lastDay===today()
-            ?'DONE'
-            :' +50 XP';
-    }
-
-    if(stats){
-        stats.innerHTML=
-            Object.entries(state.stats).map(([k,v])=>`
-                <div style="margin:13px 0">
-                    <div class="row">
-                        <span>${k}</span>
-                        <b>${v}</b>
-                    </div>
-
-                    <div class="statbar">
-                        <div
-                            class="fill"
-                            style="width:${v}%">
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-    }
-
-    if(achievements){
-        achievements.innerHTML=
-            (
-                state.achievements.length
-                ?state.achievements
-                :['No achievements yet']
-            ).map(a=>`
-                <div class="gate">
-                    🏆 ${a}
-                </div>
-            `).join('');
-    }
-
-    renderGates();
-    renderTraining();
-}
-
-document.addEventListener('DOMContentLoaded',()=>{
-    render();
-});
-</script>
+</body>
+</html>
