@@ -2,11 +2,14 @@ package com.huntersassociation.app;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.graphics.Color;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.view.View;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
@@ -17,14 +20,10 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         web = new WebView(this);
-        setContentView(web);
 
-        web.setVisibility(View.VISIBLE);
-        web.setEnabled(true);
-        web.setClickable(true);
-        web.setFocusable(true);
-        web.setFocusableInTouchMode(true);
-        web.requestFocus();
+        web.setBackgroundColor(Color.rgb(5, 5, 16));
+
+        setContentView(web);
 
         WebSettings settings = web.getSettings();
 
@@ -40,15 +39,32 @@ public class MainActivity extends Activity {
         settings.setLoadWithOverviewMode(false);
         settings.setUseWideViewPort(false);
 
-        web.setWebViewClient(new WebViewClient());
+        web.setWebViewClient(new WebViewClient() {
+
+            @Override
+            public void onReceivedError(
+                    WebView view,
+                    WebResourceRequest request,
+                    WebResourceError error) {
+
+                if (request.isForMainFrame()) {
+                    Toast.makeText(
+                            MainActivity.this,
+                            "Hunter's Association failed to load.",
+                            Toast.LENGTH_LONG
+                    ).show();
+                }
+            }
+        });
+
         web.setWebChromeClient(new WebChromeClient());
 
-        web.loadUrl("file:///android_asset/index.html");
+        web.loadUrl("file:///android_asset/hunters_association_prototype.html");
     }
 
     @Override
     public void onBackPressed() {
-        if (web.canGoBack()) {
+        if (web != null && web.canGoBack()) {
             web.goBack();
         } else {
             super.onBackPressed();
